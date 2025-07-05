@@ -18,7 +18,7 @@ with col_left:
     st.subheader("💬 Prompts")
     prompt_to_remove = None
     for i, prompt in enumerate(st.session_state.prompts):
-        cols = st.columns([8, 1])
+        cols = st.columns([10, 1])
         with cols[0]:
             st.text_input(f"Prompt {i+1}", value=prompt['text'], key=f'prompt_text_{prompt["id"]}')
         with cols[1]:
@@ -34,7 +34,7 @@ with col_right:
     st.subheader("📝 Facts")
     fact_to_remove = None
     for i, fact in enumerate(st.session_state.facts):
-        cols = st.columns([8, 1])
+        cols = st.columns([10, 1])
         with cols[0]:
             st.text_input(f"Fact {i+1}", value=fact['text'], key=f'fact_text_{fact["id"]}')
         with cols[1]:
