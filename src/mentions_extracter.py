@@ -16,11 +16,17 @@ class listOfIds(BaseModel):
     ids: list[int]
     
 
+# In-memory cache for process_single_context
+_context_cache = {}
 
 def process_single_context(ctx: str, facts_json: str, model: str = "gpt-4o") -> List[int]:
     """
     Process a single context and return the list of fact IDs mentioned.
+    Uses in-memory cache for repeated queries.
     """
+    cache_key = (ctx, facts_json, model)
+    if cache_key in _context_cache:
+        return _context_cache[cache_key]
     try:
         response = client.beta.chat.completions.parse(
             model=model,
@@ -36,6 +42,7 @@ def process_single_context(ctx: str, facts_json: str, model: str = "gpt-4o") -> 
         
         parsed_response = response.choices[0].message.parsed
         print(f"Context: {ctx[:50]}... -> IDs: {parsed_response.ids}")
+        _context_cache[cache_key] = parsed_response.ids
         return parsed_response.ids
     except Exception as e:
         print(f"Error processing context: {e}")
@@ -118,4 +125,4 @@ prompts = [
     "BMW VS Mercedez electric cars"
 ]
 
-print(get_perc_for_prompts_and_facts(prompts, facts))
+# print(get_perc_for_prompts_and_facts(prompts, facts))
