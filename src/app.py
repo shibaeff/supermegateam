@@ -1,5 +1,7 @@
 import streamlit as st
 import uuid
+from typing import List
+import random
 
 # --- Initialize session state for separate facts and prompts lists with unique IDs ---
 def init_list(key):
@@ -71,18 +73,31 @@ with col_prompts:
     if st.button("➕", key="add_prompt"):
         st.session_state.prompts.append({'id': str(uuid.uuid4()), 'text': ''})
 
+def gen_perc_for_facts_and_prompts(facts: List[str], prompts: List[str]) -> List[float]:
+    # Mock: return a random percentage for each fact
+    return [round(random.uniform(0, 1), 2) for _ in facts]
+
 # --- Single Submit All button for both prompts and facts ---
 with st.form(key='submit_all_form', clear_on_submit=False):
     submitted = st.form_submit_button("Submit All")
+    mentioned_rates = None
     if submitted:
         for idx, prompt in enumerate(st.session_state.prompts):
             st.session_state.prompts[idx]['text'] = st.session_state[f'prompt_text_{prompt["id"]}']
         for idx, fact in enumerate(st.session_state.facts):
             st.session_state.facts[idx]['text'] = st.session_state[f'fact_text_{fact["id"]}']
+        # Call the mock function
+        facts_list = [f['text'] for f in st.session_state.facts]
+        prompts_list = [p['text'] for p in st.session_state.prompts]
+        mentioned_rates = gen_perc_for_facts_and_prompts(facts_list, prompts_list)
         # Mentioned Rate section above chat runs
         st.markdown("---")
         st.header("Mentioned Rate & Chats")
-        st.info("This section can be updated to show fact/prompt combinations or evaluation results.")
+        if mentioned_rates:
+            for i, rate in enumerate(mentioned_rates):
+                st.write(f"Fact {i+1}: {int(rate*100)}% mentioned")
+        else:
+            st.info("This section can be updated to show fact/prompt combinations or evaluation results.")
         # Chat run placeholders
         st.markdown("---")
         st.header("Chat Runs (Placeholders)")
