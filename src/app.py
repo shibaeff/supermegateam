@@ -18,12 +18,13 @@ with col_left:
     st.subheader("💬 Prompts")
     prompt_to_remove = None
     for i, prompt in enumerate(st.session_state.prompts):
-        st.text_input(f"Prompt {i+1}", value=prompt['text'], key=f'prompt_text_{prompt["id"]}')
-    # Remove buttons outside the form
-    for i, prompt in enumerate(st.session_state.prompts):
-        if len(st.session_state.prompts) > 1:
-            if st.button("❌", key=f'remove_prompt_{prompt["id"]}'):
-                prompt_to_remove = prompt['id']
+        cols = st.columns([8, 1])
+        with cols[0]:
+            st.text_input(f"Prompt {i+1}", value=prompt['text'], key=f'prompt_text_{prompt["id"]}')
+        with cols[1]:
+            if len(st.session_state.prompts) > 1:
+                if st.button("❌", key=f'remove_prompt_{prompt["id"]}'):
+                    prompt_to_remove = prompt['id']
     if prompt_to_remove:
         st.session_state.prompts = [p for p in st.session_state.prompts if p['id'] != prompt_to_remove]
     if st.button("➕", key="add_prompt"):
@@ -33,12 +34,13 @@ with col_right:
     st.subheader("📝 Facts")
     fact_to_remove = None
     for i, fact in enumerate(st.session_state.facts):
-        st.text_input(f"Fact {i+1}", value=fact['text'], key=f'fact_text_{fact["id"]}')
-    # Remove buttons outside the form
-    for i, fact in enumerate(st.session_state.facts):
-        if len(st.session_state.facts) > 1:
-            if st.button("❌", key=f'remove_fact_{fact["id"]}'):
-                fact_to_remove = fact['id']
+        cols = st.columns([8, 1])
+        with cols[0]:
+            st.text_input(f"Fact {i+1}", value=fact['text'], key=f'fact_text_{fact["id"]}')
+        with cols[1]:
+            if len(st.session_state.facts) > 1:
+                if st.button("❌", key=f'remove_fact_{fact["id"]}'):
+                    fact_to_remove = fact['id']
     if fact_to_remove:
         st.session_state.facts = [f for f in st.session_state.facts if f['id'] != fact_to_remove]
     if st.button("➕", key="add_fact"):
