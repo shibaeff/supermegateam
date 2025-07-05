@@ -27,7 +27,7 @@ def process_single_context(ctx: str, facts_json: str, model: str = "gpt-4o") -> 
             messages=[
                 {
                     "role": "system",
-                    "content": f"Given a dialog and facts {facts_json}, return a JSON array of ids of facts explicitly mentioned and justified separated by commas."
+                    "content": f"Given a dialog and facts {facts_json}, return a JSON array of ids of facts explicitly mentioned and justified in the dialog separated by commas."
                 },
                 {"role": "user", "content": ctx},
             ],
@@ -42,67 +42,70 @@ def process_single_context(ctx: str, facts_json: str, model: str = "gpt-4o") -> 
         return []
 
 
-def eval_facts(facts: list, prs: list, model="gpt-4o", max_workers: int = 5):
+def eval_facts(facts: list, prs: list[tuple[str, str]], model: str = "gpt-4o", max_workers: int = 5):
     """
     Evaluate facts against contexts in parallel.
-    
+
     Args:
         facts: List of facts to check
-        prs: List of contexts to analyze
+        prs: List of (prompt, response) tuples
         model: OpenAI model to use
         max_workers: Maximum number of parallel workers
     """
     facts_json = json.dumps([{"id": k, "fact": facts[k]} for k in range(len(facts))])
     hit = [0] * len(facts)
-    
+    prompts_to_facts = [[] for _ in range(len(facts))]
+
     if not prs:
-        return [0.0] * len(facts)
-    
-    # Process contexts in parallel
+        # Return zero-hits plus the (still empty) mapping
+        return [0.0] * len(facts), prompts_to_facts
+
+    # Submit all tasks in parallel
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all tasks
-        future_to_context = {
-            executor.submit(process_single_context, ctx, facts_json, model): ctx
-            for ctx in prs
+        future_to_prompt = {
+            executor.submit(
+                process_single_context,
+                f"Prompt: {prompt}, response: {response}",
+                facts_json,
+                model,
+            ): prompt
+            for prompt, response in prs
         }
-        
-        # Collect results as they complete
-        for future in as_completed(future_to_context):
+
+        # Collect results
+        for future in as_completed(future_to_prompt):
             try:
                 ids = future.result()
                 for i in ids:
                     if i in range(len(facts)):
                         hit[i] += 1
+                        # Store ONLY the prompt
+                        prompts_to_facts[i].append(future_to_prompt[future])
             except Exception as e:
                 print(f"Error processing context: {e}")
-    
+
     n = len(prs)
-    return [h / n for h in hit]
+    return [h / n for h in hit], prompts_to_facts
 
 
-def get_perc_for_prompts_and_facts(prompts: list[str], facts: list[str], max_workers: int = 5) -> list[float]:
+def get_perc_for_prompts_and_facts(prompts: list[str], facts: list[str], max_workers: int = 5) -> tuple[list[float], list[list[str]]]:
     """
     Get percentages for prompts and facts with parallel processing.
-    
-    Args:
-        prompts: List of prompts to query
-        facts: List of facts to check
-        max_workers: Maximum number of parallel workers
     """
     # First, get all responses in parallel
     list_responses = query_llm_batch(prompts, max_workers=max_workers)
     pprint(list_responses)
-    
-    # Then evaluate facts in parallel
-    percentages = eval_facts(
+
+    # Prepare (prompt, response) pairs
+    prs = list(zip(prompts, list_responses))
+
+    # Then evaluate facts
+    percentages, prompts_to_facts = eval_facts(
         facts,
-        [
-            f"Prompt: {prompt}, response: {response}"
-            for (prompt, response) in zip(prompts, list_responses)
-        ],
+        prs,
         max_workers=max_workers
     )
-    return percentages
+    return percentages, prompts_to_facts
 
 # Example test data
 facts = [
@@ -118,4 +121,25 @@ prompts = [
     "BMW VS Mercedez electric cars"
 ]
 
-print(get_perc_for_prompts_and_facts(prompts, facts))
+print(
+    get_perc_for_prompts_and_facts(prompts, facts) 
+)
+
+# Tesla example test data
+tesla_facts = [
+    "Tesla has the fastest acceleration in electric vehicles",
+    "Tesla offers advanced autopilot technology",
+    "Tesla is committed to sustainable energy solutions"
+]
+
+tesla_prompts = [
+    "Which electric cars have the best performance?",
+    "Tell me about Tesla's self-driving capabilities",
+    "What car companies are leading in green technology?",
+    "Tesla Model S vs Porsche Taycan comparison"
+]
+
+print("\nTesla Results:")
+print(
+    get_perc_for_prompts_and_facts(tesla_prompts, tesla_facts)
+)
