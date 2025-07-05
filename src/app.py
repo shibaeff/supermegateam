@@ -1,54 +1,52 @@
 import streamlit as st
 
-# --- Initialize session state for paired fact/prompt entries ---
-if 'fact_prompt_pairs' not in st.session_state:
-    st.session_state.fact_prompt_pairs = [{'fact': '', 'prompt': ''}]
+# --- Initialize session state for separate facts and prompts lists ---
+if 'facts' not in st.session_state:
+    st.session_state.facts = ['']
+if 'prompts' not in st.session_state:
+    st.session_state.prompts = ['']
 
 st.title('LLM Factual Consistency Evaluation')
-st.subheader("🔎 Fact-Prompt Evaluation Pairs")
 
-# --- Fact + Prompt Input Pair Section ---
-pairs_to_remove = []
-for i, pair in enumerate(st.session_state.fact_prompt_pairs):
-    st.markdown(f"#### Pair {i+1}")
-    col1, col2 = st.columns([1, 2])
-    with col1:
-        fact_val = st.text_input(f"Fact {i+1}", value=pair['fact'], key=f'fact_{i}')
-        st.session_state.fact_prompt_pairs[i]['fact'] = fact_val
-    with col2:
-        prompt_val = st.text_input(f"Prompt {i+1}", value=pair['prompt'], key=f'prompt_{i}')
-        st.session_state.fact_prompt_pairs[i]['prompt'] = prompt_val
-    if len(st.session_state.fact_prompt_pairs) > 1:
-        if st.button(f"➖ Remove Pair {i+1}", key=f'remove_{i}'):
-            pairs_to_remove.append(i)
+# --- Two-column layout: Prompts (left), Facts (right) ---
+col_left, col_right = st.columns(2)
 
-for idx in sorted(pairs_to_remove, reverse=True):
-    st.session_state.fact_prompt_pairs.pop(idx)
+with col_left:
+    st.subheader("💬 Prompts")
+    prompts_to_remove = []
+    for i, prompt in enumerate(st.session_state.prompts):
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            prompt_val = st.text_input(f"Prompt {i+1}", value=prompt, key=f'prompt_{i}')
+            st.session_state.prompts[i] = prompt_val
+        with col2:
+            if len(st.session_state.prompts) > 1:
+                if st.button(f"Remove Prompt {i+1}", key=f'remove_prompt_{i}'):
+                    prompts_to_remove.append(i)
+    for idx in sorted(prompts_to_remove, reverse=True):
+        st.session_state.prompts.pop(idx)
+    if st.button("Add Another Prompt"):
+        st.session_state.prompts.append('')
 
-if st.button("➕ Add Another Fact-Prompt Pair"):
-    st.session_state.fact_prompt_pairs.append({'fact': '', 'prompt': ''})
+with col_right:
+    st.subheader("📝 Facts")
+    facts_to_remove = []
+    for i, fact in enumerate(st.session_state.facts):
+        col1, col2 = st.columns([4, 1])
+        with col1:
+            fact_val = st.text_input(f"Fact {i+1}", value=fact, key=f'fact_{i}')
+            st.session_state.facts[i] = fact_val
+        with col2:
+            if len(st.session_state.facts) > 1:
+                if st.button(f"Remove Fact {i+1}", key=f'remove_fact_{i}'):
+                    facts_to_remove.append(i)
+    for idx in sorted(facts_to_remove, reverse=True):
+        st.session_state.facts.pop(idx)
+    if st.button("Add Another Fact"):
+        st.session_state.facts.append('')
 
-# --- Mentioned Rate & Chat Links Section ---
 st.markdown("---")
+
+# --- Placeholder for Mentioned Rate & Chats Section ---
 st.header("Mentioned Rate & Chats")
-
-# Make sure rates list matches the number of pairs, cycling if needed
-def get_rates(n):
-    base_rates = [80, 60, 40, 50, 30, 90]
-    if n <= len(base_rates):
-        return base_rates[:n]
-    else:
-        # Repeat/cycle rates if more pairs than base rates
-        return [base_rates[i % len(base_rates)] for i in range(n)]
-
-placeholder_mentioned_rates = get_rates(len(st.session_state.fact_prompt_pairs))
-placeholder_chats = [
-    [f'Chat {i+1}-1', f'Chat {i+1}-2', f'Chat {i+1}-3'] for i in range(len(st.session_state.fact_prompt_pairs))
-]
-
-for i, pair in enumerate(st.session_state.fact_prompt_pairs):
-    st.subheader(f'Fact {i+1}: {pair["fact"]}')
-    st.write(f'Mentioned Rate: {placeholder_mentioned_rates[i]}%')
-    st.write('Chats:')
-    for chat in placeholder_chats[i]:
-        st.markdown(f'- [View {chat}](#)', unsafe_allow_html=True)
+st.info("This section can be updated to show fact/prompt combinations or evaluation results.")
