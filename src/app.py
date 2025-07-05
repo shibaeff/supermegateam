@@ -24,8 +24,7 @@ with col_left:
                 prompt_val = st.text_input(f"Prompt {i+1}", value=prompt['text'], key=f'prompt_text_{prompt["id"]}')
             with col2:
                 remove = st.form_submit_button("❌") if len(st.session_state.prompts) > 1 else False
-            update = st.form_submit_button("Update", use_container_width=True, help="Press Enter or click to update.")
-            if update or remove:
+            if remove or st.session_state.prompts[i]['text'] != prompt_val:
                 st.session_state.prompts[i]['text'] = prompt_val
             if remove:
                 prompt_to_remove = prompt['id']
@@ -44,8 +43,7 @@ with col_right:
                 fact_val = st.text_input(f"Fact {i+1}", value=fact['text'], key=f'fact_text_{fact["id"]}')
             with col2:
                 remove = st.form_submit_button("❌") if len(st.session_state.facts) > 1 else False
-            update = st.form_submit_button("Update", use_container_width=True, help="Press Enter or click to update.")
-            if update or remove:
+            if remove or st.session_state.facts[i]['text'] != fact_val:
                 st.session_state.facts[i]['text'] = fact_val
             if remove:
                 fact_to_remove = fact['id']
