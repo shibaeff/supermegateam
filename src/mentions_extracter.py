@@ -111,6 +111,56 @@ def get_perc_for_prompts_and_facts(prompts: list[str], facts: list[str], max_wor
     )
     return percentages
 
+
+def get_all_for_prompts_and_facts(prompts: list[str], facts: list[str], max_workers: int = 5):
+    """
+    Extended version: returns all intermediate data for debugging/analysis.
+    Returns:
+        {
+            'responses': list of LLM responses,
+            'prompt_response_pairs': list of context strings,
+            'fact_ids_per_context': list of lists of fact IDs per context,
+            'percentages': final percentages per fact
+        }
+    """
+    # Get all responses in parallel
+    list_responses = query_llm_batch(prompts, max_workers=max_workers)
+    prompt_response_pairs = [
+        f"Prompt: {prompt}, response: {response}"
+        for (prompt, response) in zip(prompts, list_responses)
+    ]
+    
+    facts_json = json.dumps([{"id": k, "fact": facts[k]} for k in range(len(facts))])
+    fact_ids_per_context = []
+    
+    # Process each context and collect fact IDs
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(process_single_context, ctx, facts_json)
+            for ctx in prompt_response_pairs
+        ]
+        for future in as_completed(futures):
+            # To preserve order, we need to map futures to their index
+            pass  # We'll fix order below
+    # Instead, do ordered collection:
+    fact_ids_per_context = [process_single_context(ctx, facts_json) for ctx in prompt_response_pairs]
+    
+    # Calculate percentages as before
+    hit = [0] * len(facts)
+    for ids in fact_ids_per_context:
+        for i in ids:
+            if i in range(len(facts)):
+                hit[i] += 1
+    n = len(prompt_response_pairs)
+    percentages = [h / n if n > 0 else 0.0 for h in hit]
+    
+    return {
+        'responses': list_responses,
+        'prompt_response_pairs': prompt_response_pairs,
+        'fact_ids_per_context': fact_ids_per_context,
+        'percentages': percentages
+    }
+
 # Example test data
 facts = [
     "BMW electric cars have a great range",
