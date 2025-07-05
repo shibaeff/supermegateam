@@ -52,6 +52,12 @@ with st.form(key='submit_all_form', clear_on_submit=False):
             st.session_state.prompts[idx]['text'] = st.session_state[f'prompt_text_{prompt["id"]}']
         for idx, fact in enumerate(st.session_state.facts):
             st.session_state.facts[idx]['text'] = st.session_state[f'fact_text_{fact["id"]}']
+        # Add chat run placeholders for each prompt/fact combination
+        st.markdown("---")
+        st.header("Chat Runs (Placeholders)")
+        for i, prompt in enumerate(st.session_state.prompts):
+            for j, fact in enumerate(st.session_state.facts):
+                st.info(f"Chat Run Placeholder: Prompt {i+1} & Fact {j+1}")
 
 st.markdown("---")
 
