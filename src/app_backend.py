@@ -12,7 +12,7 @@ def eval_facts_endpoint():
         return jsonify({'error': 'prompts and facts must be lists'}), 400
     try:
         percentages = get_perc_for_prompts_and_facts(prompts, facts)
-        return jsonify({'percentages': percentages})
+        return jsonify({'percentages': percentages[0], 'prompts_to_facts': percentages[1]})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 

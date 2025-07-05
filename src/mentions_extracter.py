@@ -164,6 +164,7 @@ def get_all_for_prompts_and_facts(prompts: list[str], facts: list[str], max_work
         'percentages': percentages
     }
 
+"""
 # Example test data
 facts = [
     "BMW electric cars have a great range",
@@ -178,7 +179,6 @@ prompts = [
     "BMW VS Mercedez electric cars"
 ]
 
-<<<<<<< HEAD
 print(
     get_perc_for_prompts_and_facts(prompts, facts) 
 )
@@ -201,6 +201,4 @@ print("\nTesla Results:")
 print(
     get_perc_for_prompts_and_facts(tesla_prompts, tesla_facts)
 )
-=======
-# print(get_perc_for_prompts_and_facts(prompts, facts))
->>>>>>> 095a6e6b76cc2879bf23b900eeb1c2b10efa4d7d
+"""
