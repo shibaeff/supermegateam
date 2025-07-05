@@ -1,11 +1,15 @@
 import os
 from dotenv import load_dotenv
-import openai
+from openai import OpenAI
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import List
 
 # Load environment variables from .env file
 load_dotenv()
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai.api_key = OPENAI_API_KEY
+
+# Create OpenAI client
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def query_llm(prompt: str) -> str:
@@ -14,7 +18,7 @@ def query_llm(prompt: str) -> str:
     Uses OpenAI API (no web search, as it's not supported in public API).
     """
     try:
-        response = openai.chat.completions.create(
+        response = client.chat.completions.create(
             model="gpt-4o-search-preview",
             messages=[
                 {
@@ -29,12 +33,42 @@ def query_llm(prompt: str) -> str:
         return f"Error: {e}"
 
 
-def query_llm_batch(prompts: list[str]) -> list[str]:
+def query_llm_batch(prompts: List[str], max_workers: int = 5) -> List[str]:
     """
-    Takes a list of prompts and returns a list of answers for each prompt after querying the LLM.
+    Takes a list of prompts and returns a list of answers for each prompt after querying the LLM in parallel.
+    
+    Args:
+        prompts: List of prompts to query
+        max_workers: Maximum number of parallel workers (default: 5)
+    
+    Returns:
+        List of responses in the same order as input prompts
     """
-    return [query_llm(prompt) for prompt in prompts]
-
+    if not prompts:
+        return []
+    
+    # Create a dictionary to maintain order of results
+    results = {}
+    
+    # Use ThreadPoolExecutor for parallel execution
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all tasks
+        future_to_index = {
+            executor.submit(query_llm, prompt): i 
+            for i, prompt in enumerate(prompts)
+        }
+        
+        # Collect results as they complete
+        for future in as_completed(future_to_index):
+            index = future_to_index[future]
+            try:
+                result = future.result()
+                results[index] = result
+            except Exception as e:
+                results[index] = f"Error: {e}"
+    
+    # Return results in original order
+    return [results[i] for i in range(len(prompts))]
 
 
 def test_query_llm_batch():
