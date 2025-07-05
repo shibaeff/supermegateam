@@ -1,10 +1,13 @@
 import streamlit as st
+import uuid
 
-# --- Initialize session state for separate facts and prompts lists ---
-if 'facts' not in st.session_state:
-    st.session_state.facts = ['']
-if 'prompts' not in st.session_state:
-    st.session_state.prompts = ['']
+# --- Initialize session state for separate facts and prompts lists with unique IDs ---
+def init_list(key):
+    if key not in st.session_state:
+        st.session_state[key] = [{'id': str(uuid.uuid4()), 'text': ''}]
+
+init_list('facts')
+init_list('prompts')
 
 st.title('LLM Factual Consistency Evaluation')
 
@@ -13,37 +16,37 @@ col_left, col_right = st.columns(2)
 
 with col_left:
     st.subheader("💬 Prompts")
-    prompts_to_remove = []
+    prompt_to_remove = None
     for i, prompt in enumerate(st.session_state.prompts):
         col1, col2 = st.columns([4, 1])
         with col1:
-            prompt_val = st.text_input(f"Prompt {i+1}", value=prompt, key=f'prompt_{i}')
-            st.session_state.prompts[i] = prompt_val
+            prompt_val = st.text_input(f"Prompt {i+1}", value=prompt['text'], key=f'prompt_text_{prompt["id"]}')
+            st.session_state.prompts[i]['text'] = prompt_val
         with col2:
             if len(st.session_state.prompts) > 1:
-                if st.button(f"Remove Prompt {i+1}", key=f'remove_prompt_{i}'):
-                    prompts_to_remove.append(i)
-    for idx in sorted(prompts_to_remove, reverse=True):
-        st.session_state.prompts.pop(idx)
-    if st.button("Add Another Prompt"):
-        st.session_state.prompts.append('')
+                if st.button("❌", key=f'remove_prompt_{prompt["id"]}'):
+                    prompt_to_remove = prompt['id']
+    if prompt_to_remove:
+        st.session_state.prompts = [p for p in st.session_state.prompts if p['id'] != prompt_to_remove]
+    if st.button("➕", key="add_prompt"):
+        st.session_state.prompts.append({'id': str(uuid.uuid4()), 'text': ''})
 
 with col_right:
     st.subheader("📝 Facts")
-    facts_to_remove = []
+    fact_to_remove = None
     for i, fact in enumerate(st.session_state.facts):
         col1, col2 = st.columns([4, 1])
         with col1:
-            fact_val = st.text_input(f"Fact {i+1}", value=fact, key=f'fact_{i}')
-            st.session_state.facts[i] = fact_val
+            fact_val = st.text_input(f"Fact {i+1}", value=fact['text'], key=f'fact_text_{fact["id"]}')
+            st.session_state.facts[i]['text'] = fact_val
         with col2:
             if len(st.session_state.facts) > 1:
-                if st.button(f"Remove Fact {i+1}", key=f'remove_fact_{i}'):
-                    facts_to_remove.append(i)
-    for idx in sorted(facts_to_remove, reverse=True):
-        st.session_state.facts.pop(idx)
-    if st.button("Add Another Fact"):
-        st.session_state.facts.append('')
+                if st.button("❌", key=f'remove_fact_{fact["id"]}'):
+                    fact_to_remove = fact['id']
+    if fact_to_remove:
+        st.session_state.facts = [f for f in st.session_state.facts if f['id'] != fact_to_remove]
+    if st.button("➕", key="add_fact"):
+        st.session_state.facts.append({'id': str(uuid.uuid4()), 'text': ''})
 
 st.markdown("---")
 
