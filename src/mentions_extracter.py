@@ -16,11 +16,17 @@ class listOfIds(BaseModel):
     ids: list[int]
     
 
+# In-memory cache for process_single_context
+_context_cache = {}
 
 def process_single_context(ctx: str, facts_json: str, model: str = "gpt-4o") -> List[int]:
     """
     Process a single context and return the list of fact IDs mentioned.
+    Uses in-memory cache for repeated queries.
     """
+    cache_key = (ctx, facts_json, model)
+    if cache_key in _context_cache:
+        return _context_cache[cache_key]
     try:
         response = client.beta.chat.completions.parse(
             model=model,
@@ -36,6 +42,7 @@ def process_single_context(ctx: str, facts_json: str, model: str = "gpt-4o") -> 
         
         parsed_response = response.choices[0].message.parsed
         print(f"Context: {ctx[:50]}... -> IDs: {parsed_response.ids}")
+        _context_cache[cache_key] = parsed_response.ids
         return parsed_response.ids
     except Exception as e:
         print(f"Error processing context: {e}")
@@ -107,6 +114,56 @@ def get_perc_for_prompts_and_facts(prompts: list[str], facts: list[str], max_wor
     )
     return percentages, prompts_to_facts
 
+
+def get_all_for_prompts_and_facts(prompts: list[str], facts: list[str], max_workers: int = 5):
+    """
+    Extended version: returns all intermediate data for debugging/analysis.
+    Returns:
+        {
+            'responses': list of LLM responses,
+            'prompt_response_pairs': list of context strings,
+            'fact_ids_per_context': list of lists of fact IDs per context,
+            'percentages': final percentages per fact
+        }
+    """
+    # Get all responses in parallel
+    list_responses = query_llm_batch(prompts, max_workers=max_workers)
+    prompt_response_pairs = [
+        f"Prompt: {prompt}, response: {response}"
+        for (prompt, response) in zip(prompts, list_responses)
+    ]
+    
+    facts_json = json.dumps([{"id": k, "fact": facts[k]} for k in range(len(facts))])
+    fact_ids_per_context = []
+    
+    # Process each context and collect fact IDs
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(process_single_context, ctx, facts_json)
+            for ctx in prompt_response_pairs
+        ]
+        for future in as_completed(futures):
+            # To preserve order, we need to map futures to their index
+            pass  # We'll fix order below
+    # Instead, do ordered collection:
+    fact_ids_per_context = [process_single_context(ctx, facts_json) for ctx in prompt_response_pairs]
+    
+    # Calculate percentages as before
+    hit = [0] * len(facts)
+    for ids in fact_ids_per_context:
+        for i in ids:
+            if i in range(len(facts)):
+                hit[i] += 1
+    n = len(prompt_response_pairs)
+    percentages = [h / n if n > 0 else 0.0 for h in hit]
+    
+    return {
+        'responses': list_responses,
+        'prompt_response_pairs': prompt_response_pairs,
+        'fact_ids_per_context': fact_ids_per_context,
+        'percentages': percentages
+    }
+
 # Example test data
 facts = [
     "BMW electric cars have a great range",
@@ -121,6 +178,7 @@ prompts = [
     "BMW VS Mercedez electric cars"
 ]
 
+<<<<<<< HEAD
 print(
     get_perc_for_prompts_and_facts(prompts, facts) 
 )
@@ -143,3 +201,6 @@ print("\nTesla Results:")
 print(
     get_perc_for_prompts_and_facts(tesla_prompts, tesla_facts)
 )
+=======
+# print(get_perc_for_prompts_and_facts(prompts, facts))
+>>>>>>> 095a6e6b76cc2879bf23b900eeb1c2b10efa4d7d
