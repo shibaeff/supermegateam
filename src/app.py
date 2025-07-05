@@ -52,12 +52,18 @@ with st.form(key='submit_all_form', clear_on_submit=False):
             st.session_state.prompts[idx]['text'] = st.session_state[f'prompt_text_{prompt["id"]}']
         for idx, fact in enumerate(st.session_state.facts):
             st.session_state.facts[idx]['text'] = st.session_state[f'fact_text_{fact["id"]}']
-        # Add chat run placeholders for each prompt/fact combination
+        # Add several chat run placeholders, each considering all prompts and all facts
         st.markdown("---")
         st.header("Chat Runs (Placeholders)")
-        for i, prompt in enumerate(st.session_state.prompts):
-            for j, fact in enumerate(st.session_state.facts):
-                st.info(f"Chat Run Placeholder: Prompt {i+1} & Fact {j+1}")
+        for run_num in range(1, 4):
+            with st.expander(f"Chat Run {run_num}"):
+                st.markdown("**Prompts:**")
+                for i, prompt in enumerate(st.session_state.prompts):
+                    st.markdown(f"- {prompt['text']}")
+                st.markdown("**Facts:**")
+                for j, fact in enumerate(st.session_state.facts):
+                    st.markdown(f"- {fact['text']}")
+                st.markdown(f"**Simulated Chat Output {run_num}:**\n> This is a placeholder for the chat result using all prompts and facts.")
 
 st.markdown("---")
 
