@@ -19,13 +19,13 @@ with col_left:
     prompt_to_remove = None
     for i, prompt in enumerate(st.session_state.prompts):
         with st.form(key=f'prompt_form_{prompt["id"]}', clear_on_submit=False):
-            col1, col2 = st.columns([4, 1])
+            col1, col2, col3 = st.columns([4, 1, 1])
             with col1:
                 prompt_val = st.text_input(f"Prompt {i+1}", value=prompt['text'], key=f'prompt_text_{prompt["id"]}')
             with col2:
+                submit = st.form_submit_button("🔄")
+            with col3:
                 remove = st.form_submit_button("❌") if len(st.session_state.prompts) > 1 else False
-            if remove or st.session_state.prompts[i]['text'] != prompt_val:
-                st.session_state.prompts[i]['text'] = prompt_val
             if remove:
                 prompt_to_remove = prompt['id']
     if prompt_to_remove:
@@ -38,13 +38,13 @@ with col_right:
     fact_to_remove = None
     for i, fact in enumerate(st.session_state.facts):
         with st.form(key=f'fact_form_{fact["id"]}', clear_on_submit=False):
-            col1, col2 = st.columns([4, 1])
+            col1, col2, col3 = st.columns([4, 1, 1])
             with col1:
                 fact_val = st.text_input(f"Fact {i+1}", value=fact['text'], key=f'fact_text_{fact["id"]}')
             with col2:
+                submit = st.form_submit_button("🔄")
+            with col3:
                 remove = st.form_submit_button("❌") if len(st.session_state.facts) > 1 else False
-            if remove or st.session_state.facts[i]['text'] != fact_val:
-                st.session_state.facts[i]['text'] = fact_val
             if remove:
                 fact_to_remove = fact['id']
     if fact_to_remove:
