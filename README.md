@@ -1,6 +1,6 @@
 # Narrative Performance Tracker
 
-https://v0-streamlit-layout-design-bice.vercel.app - demo
+[Demo](https://v0-streamlit-layout-design-bice.vercel.app)
 
 ## Introduction
 Our project's main idea is helping brand owners check if their key narrative points and facts are actually showing up when people search for them. We're building on top of the peec.ai existing system that already tracks brand's visibility but not what exactly is being mentioned. 
